@@ -6,18 +6,22 @@ macOS port of the Bafang Configuration Tool V2.0 (Delphi 7, originally by Bafang
 
 - `Sources/BafangProtocol` – packet building, block decoding/encoding, response framing. No I/O.
 - `Sources/BafangSerial` – raw serial port (1200 8N1, no flow control), port listing, `ControllerLink` for single request/response exchanges, and `ControllerSession`, an actor that validates writes against the connected controller and verifies them by reading back.
+- `Sources/BBSToolApp` – the SwiftUI app: connection, controller info, and Basic / Pedal Assist / Throttle tabs.
 - `Sources/bbstool` – command-line tool for testing against a controller.
+- `Resources/` – app icon (from the original tool) and help PDF, added to the bundle by `scripts/build-app.sh`.
 - `Tests/` – unit tests (swift-testing). `BafangSerialTests` drive `ControllerLink` against a simulated controller on a pseudo-terminal.
 
 ## Build and test
 
-`xcode-select` points at the Command Line Tools, so select Xcode-beta per command:
+Requires Xcode 27.2 or later (Swift 6.4).
 
 ```sh
-export DEVELOPER_DIR=~/Downloads/Xcode-beta.app/Contents/Developer
 swift test
 swift build -c release   # produces .build/release/bbstool
+scripts/build-app.sh     # produces .build/app/BBSTool.app (signed ad hoc)
 ```
+
+To work on the app in Xcode, open `Package.swift` and run the `BBSToolApp` scheme.
 
 ## bbstool
 
