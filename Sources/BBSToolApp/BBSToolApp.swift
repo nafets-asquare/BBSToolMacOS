@@ -21,7 +21,24 @@ struct BBSToolApp: App {
             CommandGroup(replacing: .appInfo) {
                 Button("About BBSTool") { showAboutPanel() }
             }
-            CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .newItem) {
+                Button("Open Profile…") { model.openProfile() }
+                    .keyboardShortcut("o")
+                Menu("Open Sample Profile") {
+                    ForEach(AppModel.sampleProfiles, id: \.self) { url in
+                        Button(url.deletingPathExtension().lastPathComponent) {
+                            model.loadProfile(from: url, isSample: true)
+                        }
+                    }
+                }
+                .disabled(AppModel.sampleProfiles.isEmpty)
+            }
+            CommandGroup(replacing: .saveItem) {
+                Button("Save Profile") { model.saveProfile() }
+                    .keyboardShortcut("s")
+                Button("Save Profile As…") { model.saveProfileAs() }
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
+            }
             CommandMenu("Controller") {
                 Button("Connect") { model.connect() }
                     .keyboardShortcut("k")

@@ -30,6 +30,8 @@ struct ContentView: View {
             StatusBar()
         }
         .frame(minWidth: 780, minHeight: 640)
+        .navigationTitle(model.profileName ?? "BBSTool")
+        .navigationSubtitle(model.isProfileEdited ? "Edited" : "")
         .alert(item: $model.alert) { alert in
             Alert(title: Text(alert.title), message: Text(alert.message))
         }

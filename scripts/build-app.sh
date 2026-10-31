@@ -13,6 +13,7 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$root/.build/release/BBSToolApp" "$app/Contents/MacOS/BBSTool"
 cp "$root/Resources/Help.pdf" "$app/Contents/Resources/"
+cp -R "$root/Resources/Profiles" "$app/Contents/Resources/"
 
 # The original 256 px icon, scaled into an icon set
 iconset=$(mktemp -d)/AppIcon.iconset

@@ -59,11 +59,17 @@ final class AppModel {
     private(set) var connection = Connection.disconnected
     /// Description of the running operation; nil when idle.
     private(set) var activity: String?
-    private(set) var status = "Not connected"
+    var status = "Not connected"
 
     // Settings being edited, and what the controller holds
     var settings = ControllerSettings.initial
     private(set) var known = KnownSettings()
+
+    // Open profile. `profileURL` is nil for a sample (which cannot be saved over) or none.
+    var profileName: String?
+    var profileURL: URL?
+    /// Settings as last opened or saved, to tell whether the profile has been edited.
+    var savedSettings = ControllerSettings.initial
 
     // Presentation
     var selectedTab = SettingsTab.basic

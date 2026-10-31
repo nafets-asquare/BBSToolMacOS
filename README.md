@@ -8,7 +8,14 @@ macOS port of the Bafang Configuration Tool V2.0 (Delphi 7, originally by Bafang
 - `Sources/BafangSerial` – raw serial port (1200 8N1, no flow control), port listing, `ControllerLink` for single request/response exchanges, and `ControllerSession`, an actor that validates writes against the connected controller and verifies them by reading back.
 - `Sources/BBSToolApp` – the SwiftUI app: connection, controller info, and Basic / Pedal Assist / Throttle tabs.
 - `Sources/bbstool` – command-line tool for testing against a controller.
-- `Resources/` – app icon (from the original tool) and help PDF, added to the bundle by `scripts/build-app.sh`.
+- `Resources/` – app icon and help PDF from the original tool, plus its two profiles (`Profiles/`), added to the bundle by `scripts/build-app.sh`.
+
+## Profiles
+
+The app opens and saves the original tool's `.el` profiles (File > Open Profile…, Save Profile, Save Profile As…),
+so profiles move freely between this app and the Windows tool. New profiles are saved in `~/Documents/BBSTool Profiles`
+by default. One addition: a wheel diameter the Windows tool cannot show (e.g. 26.5") is saved as the nearest size
+plus an extra `WDCODE` key with the exact value, which the Windows tool ignores.
 - `Tests/` – unit tests (swift-testing). `BafangSerialTests` drive `ControllerLink` against a simulated controller on a pseudo-terminal.
 
 ## Build and test

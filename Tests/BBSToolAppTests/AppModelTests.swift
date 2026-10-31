@@ -1,5 +1,6 @@
 import BafangProtocol
 import BafangSerial
+import Foundation
 import Testing
 @testable import BBSToolApp
 
@@ -66,5 +67,58 @@ import Testing
         model.requestWriteAll()
         #expect(model.activity == nil)
         #expect(model.pendingWrite == nil)
+    }
+}
+
+private let profilesDirectory = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    .appendingPathComponent("Resources/Profiles")
+
+@MainActor
+@Suite struct ProfileActionTests {
+    @Test func startupValuesMatchShippedDefaultProfile() throws {
+        let data = try Data(contentsOf: profilesDirectory.appendingPathComponent("DefaultProfile.el"))
+        #expect(try Profile.decode(data) == ControllerSettings.initial)
+    }
+
+    @Test func openingASampleCannotBeSavedOver() {
+        let model = AppModel(watchPorts: false)
+        model.loadProfile(from: profilesDirectory.appendingPathComponent("Penoff.el"), isSample: true)
+        #expect(model.profileName == "Penoff (sample)")
+        #expect(model.profileURL == nil)
+        #expect(model.settings.basic.currentLimit == 25)
+        #expect(!model.isProfileEdited)
+        model.settings.basic.currentLimit = 20
+        #expect(model.isProfileEdited)
+    }
+
+    @Test func saveWritesTheOpenProfile() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("Mine.el")
+        try FileManager.default.copyItem(at: profilesDirectory.appendingPathComponent("Penoff.el"), to: url)
+
+        let model = AppModel(watchPorts: false)
+        model.loadProfile(from: url, isSample: false)
+        model.settings.throttle.speedLimit = 25
+        #expect(model.isProfileEdited)
+        model.saveProfile()
+
+        #expect(!model.isProfileEdited)
+        #expect(model.alert == nil)
+        #expect(try Profile.decode(Data(contentsOf: url)).throttle.speedLimit == 25)
+    }
+
+    @Test func invalidProfileShowsAlertAndKeepsSettings() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).el")
+        try Data("[Basic]\nWD=99\n".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let model = AppModel(watchPorts: false)
+        model.loadProfile(from: url, isSample: false)
+        #expect(model.alert?.message.contains("WD=99") == true)
+        #expect(model.settings == ControllerSettings.initial)
+        #expect(model.profileName == nil)
     }
 }
