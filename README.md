@@ -30,6 +30,20 @@ scripts/build-app.sh     # produces .build/app/BBSTool.app (signed ad hoc)
 
 To work on the app in Xcode, open `Package.swift` and run the `BBSToolApp` scheme.
 
+## Release
+
+`scripts/release.sh` builds a universal app, signs it with the Developer ID Application certificate
+(hardened runtime), notarizes and staples it, and packages it as a signed, notarized and stapled
+`.build/release-dmg/BBSTool-<version>.dmg`:
+
+```sh
+VERSION=1.0.0 scripts/release.sh
+```
+
+Notarization credentials must be stored once in the keychain under the profile `BBSTool`, e.g. with an
+App Store Connect API key (`xcrun notarytool store-credentials BBSTool --key … --key-id … --issuer …`).
+`NOTARIZE=0` signs without notarizing.
+
 ## bbstool
 
 ```sh

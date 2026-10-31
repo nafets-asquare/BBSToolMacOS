@@ -1,17 +1,23 @@
 #!/bin/sh
-# Builds BBSTool.app in .build/app from the BBSToolApp executable.
-# Signs ad hoc; Developer ID signing and notarization come later.
+# Builds BBSTool.app in .build/app from the BBSToolApp executable, signed ad hoc.
+# UNIVERSAL=1 builds for both Apple silicon and Intel. scripts/release.sh signs with
+# Developer ID and notarizes.
 set -eu
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-version=${VERSION:-0.4.0}
+version=${VERSION:-0.5.0}
 app="$root/.build/app/BBSTool.app"
 
-swift build --package-path "$root" -c release --product BBSToolApp
+set -- --package-path "$root" -c release --product BBSToolApp
+if [ "${UNIVERSAL:-0}" = 1 ]; then
+    set -- "$@" --arch arm64 --arch x86_64
+fi
+swift build "$@"
+binaries=$(swift build "$@" --show-bin-path)
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-cp "$root/.build/release/BBSToolApp" "$app/Contents/MacOS/BBSTool"
+cp "$binaries/BBSToolApp" "$app/Contents/MacOS/BBSTool"
 cp "$root/Resources/Help.pdf" "$app/Contents/Resources/"
 cp -R "$root/Resources/Profiles" "$app/Contents/Resources/"
 
