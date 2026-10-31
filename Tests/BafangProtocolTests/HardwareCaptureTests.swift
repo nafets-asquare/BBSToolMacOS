@@ -15,6 +15,19 @@ import Testing
     ]
     static let pedalAssist: [UInt8] = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x02, 0x02, 0x03, 0xFF, 0x0F, 0x06, 0x04, 0x46, 0xC4]
     static let throttle: [UInt8] = [0x54, 0x06, 0x0B, 0x28, 0x00, 0x09, 0xFF, 0x02, 0x97]
+    /// Reply to writing the throttle block back unchanged.
+    static let throttleWriteAck: [UInt8] = [0x54, 0x06, 0x5A]
+
+    @Test func throttleWriteAccepted() throws {
+        var framer = ResponseFramer()
+        framer.append(Self.throttleWriteAck)
+        guard case .writeAck(.throttle, let code) = try framer.next(expecting: .writeAck(.throttle)) else {
+            Issue.record("expected a write acknowledgement")
+            return
+        }
+        #expect(ThrottleSettings.writeResult(code: code) == .accepted)
+        #expect(framer.buffer.isEmpty)
+    }
 
     private func frame(_ bytes: [UInt8], _ block: Block) throws -> DataResponse {
         var framer = ResponseFramer()

@@ -3,12 +3,12 @@ import Foundation
 import Testing
 @testable import BafangSerial
 
-private let generalPayload = Array("HZXTSZZ610".utf8) + Array("2001".utf8) + [2, 30]
-private let basicPayload: [UInt8] = [41, 25] + Array(stride(from: 10, through: 100, by: 10)) + Array(repeating: 100, count: 10) + [58, 1]
-private let pedalAssistPayload: [UInt8] = [3, 0xFF, 0xFF, 20, 5, 4, 10, 8, 4, 8, 20]
-private let throttlePayload: [UInt8] = [11, 35, 1, 0xFF, 0xFF, 20]
+let generalPayload = Array("HZXTSZZ610".utf8) + Array("2001".utf8) + [2, 30]
+let basicPayload: [UInt8] = [41, 25] + Array(stride(from: 10, through: 100, by: 10)) + Array(repeating: 100, count: 10) + [58, 1]
+let pedalAssistPayload: [UInt8] = [3, 0xFF, 0xFF, 20, 5, 4, 10, 8, 4, 8, 20]
+let throttlePayload: [UInt8] = [11, 35, 1, 0xFF, 0xFF, 20]
 
-private func standardReplies() -> [UInt8: [UInt8]] {
+func standardReplies() -> [UInt8: [UInt8]] {
     [
         Block.general.rawValue: dataResponse(.general, generalPayload),
         Block.basic.rawValue: dataResponse(.basic, basicPayload),
@@ -17,7 +17,7 @@ private func standardReplies() -> [UInt8: [UInt8]] {
     ]
 }
 
-private func fastOptions() -> ControllerLink.Options {
+func fastOptions() -> ControllerLink.Options {
     var options = ControllerLink.Options()
     options.responseTimeout = .milliseconds(400)
     options.delayBeforeRequest = .milliseconds(5)

@@ -5,7 +5,7 @@ macOS port of the Bafang Configuration Tool V2.0 (Delphi 7, originally by Bafang
 ## Layout
 
 - `Sources/BafangProtocol` – packet building, block decoding/encoding, response framing. No I/O.
-- `Sources/BafangSerial` – raw serial port (1200 8N1, no flow control), port listing, and `ControllerLink` for request/response exchanges. Read-only for now.
+- `Sources/BafangSerial` – raw serial port (1200 8N1, no flow control), port listing, `ControllerLink` for single request/response exchanges, and `ControllerSession`, an actor that validates writes against the connected controller and verifies them by reading back.
 - `Sources/bbstool` – command-line tool for testing against a controller.
 - `Tests/` – unit tests (swift-testing). `BafangSerialTests` drive `ControllerLink` against a simulated controller on a pseudo-terminal.
 
@@ -25,8 +25,10 @@ swift build -c release   # produces .build/release/bbstool
 bbstool ports                   # list serial ports, marking USB adapters
 bbstool info [port] [--trace]   # connect and show controller info
 bbstool read [port] [--trace]   # connect and read all three settings blocks
+bbstool rewrite throttle [port] # write a block's current values back unchanged, then verify
 ```
 
-`bbstool` never writes to the controller. With no port given it uses the only USB serial adapter present.
+`rewrite` (block `basic`, `pas` or `throttle`) is the only command that writes, and it only writes back
+what it just read, after asking for confirmation. With no port given, the only USB serial adapter present is used.
 `--trace` prints every byte sent and received; `--reopen` closes and reopens the port between requests
 as the original tool did; `--timeout <ms>` and `--attempts <n>` adjust the connect behaviour.

@@ -7,12 +7,17 @@ import Foundation
 final class FakeController: @unchecked Sendable {
     struct Script: Sendable {
         /// Full response bytes per requested block ID. Missing blocks get no reply.
+        /// A successful write replaces the block's reply with the written payload.
         var replies: [UInt8: [UInt8]] = [:]
         /// Replies are sent in pieces of this size, with a pause between pieces.
         var chunkSize = 1
         var pauseBetweenChunks: Duration = .milliseconds(2)
         /// Number of connect requests to ignore before answering.
         var ignoredConnects = 0
+        /// Write result code to answer per block ID instead of success.
+        var writeRejections: [UInt8: UInt8] = [:]
+        /// Acknowledge writes as successful without storing them.
+        var discardWrites = false
     }
 
     let path: String
@@ -39,8 +44,13 @@ final class FakeController: @unchecked Sendable {
         stop()
     }
 
+    /// Stops answering and closes the master side, which the port sees as the device going away.
     func stop() {
-        lock.withLock { running = false }
+        let wasRunning = lock.withLock {
+            defer { running = false }
+            return running
+        }
+        guard wasRunning else { return }
         Thread.sleep(forTimeInterval: 0.06)
         close(master)
     }
@@ -50,8 +60,8 @@ final class FakeController: @unchecked Sendable {
     }
 
     private func serve(_ script: Script) {
+        var script = script
         var pending: [UInt8] = []
-        var ignoredConnects = script.ignoredConnects
         while isRunning {
             var descriptor = pollfd(fd: master, events: Int16(POLLIN), revents: 0)
             guard poll(&descriptor, 1, 20) > 0 else { continue }
@@ -62,27 +72,62 @@ final class FakeController: @unchecked Sendable {
 
             while let request = takeRequest(from: &pending) {
                 lock.withLock { _requests.append(request) }
-                let block = request[1]
-                if block == Block.general.rawValue, ignoredConnects > 0 {
-                    ignoredConnects -= 1
-                    continue
-                }
-                if let reply = script.replies[block] {
-                    send(reply, script)
+                if request[0] == Opcode.write.rawValue {
+                    handleWrite(request, &script)
+                } else {
+                    handleRead(request, &script)
                 }
             }
         }
     }
 
-    /// Read requests are `11 <block>`, plus `04 B0 <checksum>` for the general block.
+    private func handleRead(_ request: [UInt8], _ script: inout Script) {
+        let block = request[1]
+        if block == Block.general.rawValue, script.ignoredConnects > 0 {
+            script.ignoredConnects -= 1
+            return
+        }
+        if let reply = script.replies[block] {
+            send(reply, script)
+        }
+    }
+
+    private func handleWrite(_ request: [UInt8], _ script: inout Script) {
+        let block = request[1]
+        let length = request[2]
+        if let code = script.writeRejections[block] {
+            send(writeAck(block, code), script)
+            return
+        }
+        if !script.discardWrites, let id = Block(rawValue: block) {
+            script.replies[block] = dataResponse(id, Array(request[3..<(3 + Int(length))]))
+        }
+        send(writeAck(block, length), script)
+    }
+
+    /// Block, result code, checksum, as captured from a BBSHD.
+    private func writeAck(_ block: UInt8, _ code: UInt8) -> [UInt8] {
+        [block, code, Packet.checksum([block, code])]
+    }
+
+    /// Reads are `11 <block>`, plus `04 B0 <checksum>` for the general block.
+    /// Writes are `16 <block> <length> <payload> <checksum>`.
     private func takeRequest(from pending: inout [UInt8]) -> [UInt8]? {
-        guard let start = pending.firstIndex(of: Opcode.read.rawValue) else {
+        let opcodes = [Opcode.read.rawValue, Opcode.write.rawValue]
+        guard let start = pending.firstIndex(where: opcodes.contains) else {
             pending.removeAll()
             return nil
         }
         pending.removeFirst(start)
-        guard pending.count >= 2 else { return nil }
-        let length = pending[1] == Block.general.rawValue ? 5 : 2
+
+        let length: Int
+        if pending[0] == Opcode.write.rawValue {
+            guard pending.count >= 3 else { return nil }
+            length = 3 + Int(pending[2]) + 1
+        } else {
+            guard pending.count >= 2 else { return nil }
+            length = pending[1] == Block.general.rawValue ? 5 : 2
+        }
         guard pending.count >= length else { return nil }
         defer { pending.removeFirst(length) }
         return Array(pending.prefix(length))

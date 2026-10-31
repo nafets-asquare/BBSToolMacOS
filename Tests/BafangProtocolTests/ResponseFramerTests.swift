@@ -95,6 +95,17 @@ private func readResponse(_ block: Block, _ payload: [UInt8]) -> [UInt8] {
         framer.append([0x52])
         #expect(try framer.next(expecting: .writeAck(.basic)) == nil)
         framer.append([0x18])
+        #expect(try framer.next(expecting: .writeAck(.basic)) == nil)
+        framer.append([0x6A])
         #expect(try framer.next(expecting: .writeAck(.basic)) == .writeAck(.basic, code: 24))
+        #expect(framer.buffer.isEmpty)
+    }
+
+    @Test func writeAckWithBadChecksumThrows() {
+        var framer = ResponseFramer()
+        framer.append([0x54, 0x06, 0x5B])
+        #expect(throws: ProtocolError.checksumMismatch(.throttle, expected: 0x5A, actual: 0x5B)) {
+            try framer.next(expecting: .writeAck(.throttle))
+        }
     }
 }

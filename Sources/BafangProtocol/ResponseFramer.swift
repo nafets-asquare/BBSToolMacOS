@@ -17,6 +17,7 @@ public struct DataResponse: Equatable, Sendable {
 public enum Response: Equatable, Sendable {
     case data(DataResponse)
     /// Reply to a write: block ID and a result code, see `SettingsBlock.writeResult(code:)`.
+    /// On the wire a checksum follows (block + code); the framer verifies it.
     case writeAck(Block, code: UInt8)
 }
 
@@ -58,9 +59,16 @@ public struct ResponseFramer: Sendable {
 
         switch expectation {
         case .writeAck:
-            guard buffer.count >= 2 else { return nil }
+            // Block, code, checksum. The original tool read only the first two bytes;
+            // the checksum was found on a BBSHD (54 06 5A).
+            guard buffer.count >= 3 else { return nil }
             let code = buffer[1]
-            buffer.removeFirst(2)
+            let checksum = buffer[2]
+            buffer.removeFirst(3)
+            let expected = Packet.checksum([block.rawValue, code])
+            guard checksum == expected else {
+                throw ProtocolError.checksumMismatch(block, expected: expected, actual: checksum)
+            }
             return .writeAck(block, code: code)
 
         case .data:

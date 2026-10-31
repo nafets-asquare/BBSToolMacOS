@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "BBSTool",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "BafangProtocol", targets: ["BafangProtocol"]),
         .library(name: "BafangSerial", targets: ["BafangSerial"]),

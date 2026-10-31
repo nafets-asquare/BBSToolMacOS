@@ -26,10 +26,12 @@ public enum TraceEvent: Sendable {
 }
 
 /// Request/response exchanges with the controller over a serial port. Blocking; call it
-/// off the main thread. Only reads are exposed until they have been verified on hardware.
+/// off the main thread, or use `ControllerSession`, which also verifies writes.
 public final class ControllerLink {
     public struct Options: Sendable {
         public var responseTimeout: Duration = .milliseconds(1500)
+        /// Writes go to flash, so allow the controller longer to answer.
+        public var writeTimeout: Duration = .seconds(3)
         public var connectAttempts = 3
         /// The original tool waited 50-80 ms before each request.
         public var delayBeforeRequest: Duration = .milliseconds(80)
@@ -81,8 +83,20 @@ public final class ControllerLink {
         }
     }
 
+    /// Writes one settings block and returns the controller's verdict. The controller
+    /// replies before it is known whether the values were stored as sent; reading the
+    /// block back is the only confirmation.
+    public func write<S: SettingsBlock>(_ settings: S) throws -> WriteResult {
+        let request = try Packet.write(settings)
+        let response = try exchange(request, expecting: .writeAck(S.block), timeout: options.writeTimeout)
+        guard case .writeAck(_, let code) = response else {
+            preconditionFailure("framer returned a response of the wrong kind")
+        }
+        return S.writeResult(code: code)
+    }
+
     private func readData(request: [UInt8], block: Block) throws -> DataResponse {
-        let received = try exchange(request, expecting: .data(block))
+        let received = try exchange(request, expecting: .data(block), timeout: options.responseTimeout)
         guard case .data(let response) = received else {
             preconditionFailure("framer returned a response of the wrong kind")
         }
@@ -95,7 +109,7 @@ public final class ControllerLink {
         return response
     }
 
-    private func exchange(_ request: [UInt8], expecting expectation: Expectation) throws -> Response {
+    private func exchange(_ request: [UInt8], expecting expectation: Expectation, timeout: Duration) throws -> Response {
         if options.reopenBetweenRequests {
             port.close()
             try port.open()
@@ -111,7 +125,7 @@ public final class ControllerLink {
         var framer = ResponseFramer()
         var received: [UInt8] = []
         let clock = ContinuousClock()
-        let deadline = clock.now + options.responseTimeout
+        let deadline = clock.now + timeout
         while clock.now < deadline {
             let chunk = try port.read(timeout: deadline - clock.now)
             guard !chunk.isEmpty else { continue }
