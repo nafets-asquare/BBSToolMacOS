@@ -5,8 +5,8 @@ public struct DataResponse: Equatable, Sendable {
     public var checksum: UInt8
 
     /// Checksum computed the same way as for write requests (block + length + payload).
-    /// The original tool never checked response checksums, so whether the controller uses
-    /// this formula is unconfirmed until tested on hardware.
+    /// The original tool never checked response checksums; this formula was confirmed
+    /// against a BBSHD for all four blocks.
     public var expectedChecksum: UInt8 {
         Packet.checksum([block.rawValue, UInt8(payload.count)] + payload)
     }

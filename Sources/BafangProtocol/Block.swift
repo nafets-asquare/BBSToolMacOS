@@ -30,4 +30,6 @@ public enum ProtocolError: Error, Equatable, Sendable {
     case unexpectedValue(field: String, value: UInt8)
     /// A setting holds a value that cannot be encoded for the controller.
     case invalidValue(field: String, value: Int)
+    /// A response's checksum did not match its contents.
+    case checksumMismatch(Block, expected: UInt8, actual: UInt8)
 }
