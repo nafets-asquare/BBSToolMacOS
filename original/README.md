@@ -2,6 +2,7 @@
 
 Delphi 7 source of the **Bafang Configuration Tool V2.0** for Windows, which this macOS app is ported from.
 It is included for reference and credit; nothing here is built or used by the macOS app.
+The MIT license of the macOS port does not apply to these files.
 
 - Originally developed by Bafang (www.szbaf.com) and released with its source code.
 - Reworked and released as V2.0 by Stefan Penov (penoff.wordpress.com), who asks that the information
