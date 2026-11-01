@@ -1,6 +1,6 @@
 # BBSTool for macOS
 
-macOS port of the Bafang Configuration Tool V2.0 (Delphi 7, originally by Bafang, reworked by Stefan Penov — penoff.wordpress.com).
+macOS port of the Bafang Configuration Tool V2.0 (Delphi 7, originally by Bafang, reworked by Stefan Penov — penoff.wordpress.com, https://penoff.me/2016/01/13/e-bike-conversion-software/)
 
 ## Layout
 
