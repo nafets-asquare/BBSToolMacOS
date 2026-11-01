@@ -20,12 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-
-This license covers the macOS port in this repository. It does not cover:
-
-- `original/`: the source of the Windows Bafang Configuration Tool by Bafang and
-  Stefan Penov, including the third-party SPComm component, which remain under
-  their authors' terms (see original/README.md).
-- `Resources/Profiles/` and `Resources/AppIcon.png`: the sample profiles and the
-  icon taken from the original tool.

@@ -62,7 +62,7 @@ as the original tool did; `--timeout <ms>` and `--attempts <n>` adjust the conne
 ## License
 
 The macOS port is released under the [MIT License](LICENSE). The original Windows tool's source in `original/`,
-and the sample profiles and icon taken from it, remain under their authors' terms; see `LICENSE` and
+and the sample profiles and icon taken from it, remain under their authors' terms and are not covered by the MIT License; see
 `original/README.md`. The Guide tab is a rewrite of Karl Gesslein's
 [A Hacker's Guide To Programming The BBS02 & BBSHD](https://electricbike-blog.com/2015/06/26/a-hackers-guide-to-programming-the-bbs02/),
 credited in the app.
