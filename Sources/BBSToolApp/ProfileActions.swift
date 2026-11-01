@@ -7,6 +7,39 @@ extension AppModel {
         profileName != nil && settings != savedSettings
     }
 
+    /// True if quitting or opening another profile would lose edits. With a profile open, that is
+    /// any change since it was opened or saved. Without one, edits are safe once the controller
+    /// holds exactly these values.
+    var hasUnsavedChanges: Bool {
+        guard settings != savedSettings else { return false }
+        if profileName != nil { return true }
+        return known != KnownSettings(basic: settings.basic, pedalAssist: settings.pedalAssist, throttle: settings.throttle)
+    }
+
+    /// Offers to save unsaved changes. Returns false if the user cancels (or cancels saving).
+    func confirmDiscardingChanges() -> Bool {
+        guard hasUnsavedChanges else { return true }
+        let alert = NSAlert()
+        alert.messageText = profileName.map { "Do you want to save the changes to “\($0)”?" }
+            ?? "Do you want to save your changes as a profile?"
+        alert.informativeText = "Your changes will be lost if you don't save them."
+        alert.addButton(withTitle: profileURL == nil ? "Save…" : "Save")
+        alert.addButton(withTitle: "Cancel")
+        let dontSave = alert.addButton(withTitle: "Don't Save")
+        dontSave.keyEquivalent = "d"
+        dontSave.keyEquivalentModifierMask = .command
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            saveProfile()
+            return !hasUnsavedChanges
+        case .alertThirdButtonReturn:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Profiles shipped with the original tool, bundled with the app.
     static var sampleProfiles: [URL] {
         (Bundle.main.urls(forResourcesWithExtension: Profile.fileExtension, subdirectory: "Profiles") ?? [])
@@ -14,12 +47,25 @@ extension AppModel {
     }
 
     func openProfile() {
+        guard confirmDiscardingChanges() else { return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [Self.profileType]
         panel.directoryURL = profileURL?.deletingLastPathComponent() ?? Self.profilesDirectory(create: false)
         panel.message = "Choose a BBSTool profile (.el)"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         loadProfile(from: url, isSample: false)
+    }
+
+    /// Opens a profile chosen outside the app, e.g. double-clicked in Finder.
+    func openProfile(at url: URL) {
+        guard url != profileURL || isProfileEdited else { return }
+        guard confirmDiscardingChanges() else { return }
+        loadProfile(from: url, isSample: false)
+    }
+
+    func openSampleProfile(_ url: URL) {
+        guard confirmDiscardingChanges() else { return }
+        loadProfile(from: url, isSample: true)
     }
 
     func loadProfile(from url: URL, isSample: Bool) {
@@ -76,7 +122,13 @@ extension AppModel {
         return info.map { "\($0.model) \(date)" } ?? "Profile \(date)"
     }
 
-    static let profileType = UTType(filenameExtension: Profile.fileExtension) ?? .data
+    /// Declared in the app's Info.plist (see scripts/build-app.sh) so Finder opens profiles in
+    /// BBSTool; falls back to the bare extension when running outside the bundle.
+    static let profileType = UTType(profileTypeIdentifier)
+        ?? UTType(filenameExtension: Profile.fileExtension)
+        ?? .data
+
+    static let profileTypeIdentifier = "io.github.nafets-asquare.bbstool.profile"
 
     /// ~/Documents/BBSTool Profiles, created when saving if needed; Documents when it does not
     /// exist (opening) or cannot be created (saving).

@@ -1,9 +1,29 @@
 import AppKit
+import BafangProtocol
 import SwiftUI
+
+/// Owns the model so that profiles opened from Finder (possibly before the window exists) and
+/// the quit check can reach it.
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    let model = AppModel()
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        // Only one profile can be open at a time; take the last one chosen
+        guard let url = urls.last(where: { $0.pathExtension.lowercased() == Profile.fileExtension }) else { return }
+        model.openProfile(at: url)
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        model.confirmDiscardingChanges() ? .terminateNow : .terminateCancel
+    }
+}
 
 @main
 struct BBSToolApp: App {
-    @State private var model = AppModel()
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
+
+    private var model: AppModel { appDelegate.model }
 
     init() {
         // Needed when launched as a bare executable (swift run) rather than from the .app bundle
@@ -27,7 +47,7 @@ struct BBSToolApp: App {
                 Menu("Open Sample Profile") {
                     ForEach(AppModel.sampleProfiles, id: \.self) { url in
                         Button(url.deletingPathExtension().lastPathComponent) {
-                            model.loadProfile(from: url, isSample: true)
+                            model.openSampleProfile(url)
                         }
                     }
                 }
@@ -53,8 +73,11 @@ struct BBSToolApp: App {
                     .disabled(!model.canTransfer)
             }
             CommandGroup(replacing: .help) {
-                Button("BBSTool Help") { openHelp() }
+                Button("Programming Guide") { model.selectedTab = .guide }
                     .keyboardShortcut("?")
+                Button("Hacker's Guide to Programming the BBS02 & BBSHD (Online)") {
+                    NSWorkspace.shared.open(Guide.sourceURL)
+                }
             }
         }
     }
@@ -70,13 +93,5 @@ struct BBSToolApp: App {
             attributes: [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize), .foregroundColor: NSColor.labelColor]
         )
         NSApplication.shared.orderFrontStandardAboutPanel(options: [.applicationName: "BBSTool", .credits: credits])
-    }
-
-    private func openHelp() {
-        if let url = Bundle.main.url(forResource: "Help", withExtension: "pdf") {
-            NSWorkspace.shared.open(url)
-        } else {
-            model.alert = AlertInfo(title: "Help not available", message: "The help file is included only in the BBSTool app bundle.")
-        }
     }
 }

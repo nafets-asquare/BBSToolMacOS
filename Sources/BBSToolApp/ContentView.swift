@@ -24,6 +24,9 @@ struct ContentView: View {
                 ThrottleTab()
                     .tabItem { Text(tabTitle("Throttle Handle", .throttle)) }
                     .tag(SettingsTab.throttle)
+                GuideView()
+                    .tabItem { Text("Guide") }
+                    .tag(SettingsTab.guide)
             }
             .padding(.horizontal)
 

@@ -122,3 +122,61 @@ private let profilesDirectory = URL(fileURLWithPath: #filePath)
         #expect(model.profileName == nil)
     }
 }
+
+@MainActor
+@Suite struct UnsavedChangesTests {
+    @Test func untouchedStartupValuesAreNotUnsaved() {
+        let model = AppModel(watchPorts: false)
+        #expect(!model.hasUnsavedChanges)
+    }
+
+    @Test func editsWithoutProfileAreUnsavedUntilTheControllerHoldsThem() {
+        let model = AppModel(watchPorts: false)
+        model.settings.throttle.startCurrent = 15
+        #expect(model.hasUnsavedChanges)
+
+        // As after writing all three blocks: nothing would be lost
+        model.known = KnownSettings(basic: model.settings.basic, pedalAssist: model.settings.pedalAssist, throttle: model.settings.throttle)
+        #expect(!model.hasUnsavedChanges)
+    }
+
+    @Test func editedProfileIsUnsavedEvenIfWrittenToController() {
+        let model = AppModel(watchPorts: false)
+        model.loadProfile(from: profilesDirectory.appendingPathComponent("Penoff.el"), isSample: true)
+        model.settings.pedalAssist.keepCurrent = 70
+        model.known = KnownSettings(basic: model.settings.basic, pedalAssist: model.settings.pedalAssist, throttle: model.settings.throttle)
+        #expect(model.hasUnsavedChanges)
+    }
+
+    @Test func guideTabHasNoControllerActions() {
+        let model = AppModel(watchPorts: false)
+        model.read(.guide)
+        model.requestWrite(.guide)
+        #expect(!model.isModified(.guide))
+        #expect(model.activity == nil)
+        #expect(model.pendingWrite == nil)
+    }
+}
+
+@Suite struct GuideTests {
+    @Test func everyEntryHasText() {
+        let entries = Guide.sections.flatMap(\.entries)
+        #expect(entries.count > 20)
+        for entry in entries {
+            #expect(!entry.text.isEmpty, "\(entry.title)")
+        }
+    }
+
+    @Test func entryTitlesAreUniqueWithinSections() {
+        for section in Guide.sections {
+            #expect(Set(section.entries.map(\.id)).count == section.entries.count, "\(section.title)")
+        }
+    }
+
+    @Test func markdownParses() throws {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        for entry in Guide.sections.flatMap(\.entries) {
+            _ = try AttributedString(markdown: entry.text, options: options)
+        }
+    }
+}

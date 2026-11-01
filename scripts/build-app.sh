@@ -18,7 +18,6 @@ binaries=$(swift build "$@" --show-bin-path)
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$binaries/BBSToolApp" "$app/Contents/MacOS/BBSTool"
-cp "$root/Resources/Help.pdf" "$app/Contents/Resources/"
 cp -R "$root/Resources/Profiles" "$app/Contents/Resources/"
 
 # The original 256 px icon, scaled into an icon set
@@ -49,6 +48,28 @@ cat > "$app/Contents/Info.plist" <<EOF
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>Based on the Bafang Configuration Tool by Bafang and Stefan Penov.</string>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key><string>io.github.nafets-asquare.bbstool.profile</string>
+            <key>UTTypeDescription</key><string>Bafang Configuration Tool Profile</string>
+            <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+            <key>UTTypeIconFile</key><string>AppIcon</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key><array><string>el</string></array>
+            </dict>
+        </dict>
+    </array>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key><string>Bafang Configuration Tool Profile</string>
+            <key>CFBundleTypeRole</key><string>Editor</string>
+            <key>LSHandlerRank</key><string>Owner</string>
+            <key>LSItemContentTypes</key><array><string>io.github.nafets-asquare.bbstool.profile</string></array>
+        </dict>
+    </array>
 </dict>
 </plist>
 EOF

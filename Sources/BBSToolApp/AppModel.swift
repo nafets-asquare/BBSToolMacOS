@@ -5,6 +5,8 @@ import Observation
 
 enum SettingsTab: Hashable, CaseIterable {
     case basic, pedalAssist, throttle
+    /// The programming guide; not a settings block.
+    case guide
 
     init(_ block: Block) {
         switch block {
@@ -63,7 +65,7 @@ final class AppModel {
 
     // Settings being edited, and what the controller holds
     var settings = ControllerSettings.initial
-    private(set) var known = KnownSettings()
+    var known = KnownSettings()
 
     // Open profile. `profileURL` is nil for a sample (which cannot be saved over) or none.
     var profileName: String?
@@ -176,6 +178,8 @@ final class AppModel {
                 self?.known.throttle = throttle
                 self?.status = "Throttle Handle read from the controller."
             }
+        case .guide:
+            break
         }
     }
 
@@ -197,6 +201,7 @@ final class AppModel {
         case .basic: requestWrite(settings.basic, known: known.basic) { $0.known.basic = $1 }
         case .pedalAssist: requestWrite(settings.pedalAssist, known: known.pedalAssist) { $0.known.pedalAssist = $1 }
         case .throttle: requestWrite(settings.throttle, known: known.throttle) { $0.known.throttle = $1 }
+        case .guide: break
         }
     }
 
@@ -250,6 +255,7 @@ final class AppModel {
         case .basic: known.basic.map { $0 != settings.basic } ?? false
         case .pedalAssist: known.pedalAssist.map { $0 != settings.pedalAssist } ?? false
         case .throttle: known.throttle.map { $0 != settings.throttle } ?? false
+        case .guide: false
         }
     }
 
