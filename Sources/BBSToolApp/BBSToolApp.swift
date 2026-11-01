@@ -88,7 +88,8 @@ struct BBSToolApp: App {
                 Configuration tool for Bafang BBS01, BBS02 and BBSHD mid-drive controllers.
 
                 macOS port of the Bafang Configuration Tool V2.0, originally developed by Bafang \
-                (www.szbaf.com) and reworked by Stefan Penov (penoff.wordpress.com).
+                (www.szbaf.com) and reworked by Stefan Penov (penoff.wordpress.com, \
+                penoff.me/2016/01/13/e-bike-conversion-software).
                 """,
             attributes: [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize), .foregroundColor: NSColor.labelColor]
         )
